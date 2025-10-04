@@ -47,16 +47,6 @@ const Contact = () => {
         throw new Error("Failed to save your request. Please try again.");
       }
 
-      // Also open email client as backup notification
-      const subject = encodeURIComponent(`New Consultation Request from ${formData.name}`);
-      const body = encodeURIComponent(
-        `Name: ${formData.name}\n` +
-        `Email: ${formData.email}\n` +
-        `Phone: ${formData.phone || 'Not provided'}\n\n` +
-        `Message:\n${formData.message}`
-      );
-      window.location.href = `mailto:APEXBOOKS1@OUTLOOK.COM?subject=${subject}&body=${body}`;
-
       toast({
         title: "Request submitted successfully!",
         description: "We'll get back to you within 24 hours.",
