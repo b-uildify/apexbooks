@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Phone, MapPin, Send } from "lucide-react";
 import { z } from "zod";
+import { supabase } from "@/integrations/supabase/client";
 
 const contactSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(100, "Name must be less than 100 characters"),
@@ -31,7 +32,22 @@ const Contact = () => {
       // Validate form data
       contactSchema.parse(formData);
 
-      // Encode data for email
+      // Save to database
+      const { error: dbError } = await supabase
+        .from('leads')
+        .insert({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone || null,
+          message: formData.message,
+          status: 'new'
+        });
+
+      if (dbError) {
+        throw new Error("Failed to save your request. Please try again.");
+      }
+
+      // Also open email client as backup notification
       const subject = encodeURIComponent(`New Consultation Request from ${formData.name}`);
       const body = encodeURIComponent(
         `Name: ${formData.name}\n` +
@@ -39,13 +55,11 @@ const Contact = () => {
         `Phone: ${formData.phone || 'Not provided'}\n\n` +
         `Message:\n${formData.message}`
       );
-
-      // Open email client
       window.location.href = `mailto:APEXBOOKS1@OUTLOOK.COM?subject=${subject}&body=${body}`;
 
       toast({
-        title: "Opening email client...",
-        description: "We'll get back to you within 24 hours!",
+        title: "Request submitted successfully!",
+        description: "We'll get back to you within 24 hours.",
       });
 
       // Reset form
@@ -60,6 +74,12 @@ const Contact = () => {
         toast({
           title: "Validation Error",
           description: error.errors[0].message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
           variant: "destructive",
         });
       }
