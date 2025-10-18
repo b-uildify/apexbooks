@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useUser, useClerk } from "@clerk/clerk-react";
+import { useUser, useClerk, useAuth } from "@clerk/clerk-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,6 +41,7 @@ const Admin = () => {
   const { toast } = useToast();
   const { user, isSignedIn, isLoaded } = useUser();
   const { signOut } = useClerk();
+  const { getToken } = useAuth();
 
   useEffect(() => {
     if (isLoaded) {
@@ -61,16 +62,24 @@ const Admin = () => {
   };
 
   const loadLeads = async () => {
+    if (!isSignedIn) return;
+    
     try {
-      const { data, error } = await supabase
-        .from("leads")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const token = await getToken();
+      
+      const { data, error } = await supabase.functions.invoke('manage-leads', {
+        body: { action: 'list' },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (error) throw error;
-      setLeads(data || []);
-      setFilteredLeads(data || []);
+      
+      setLeads(data.data || []);
+      setFilteredLeads(data.data || []);
     } catch (error: any) {
+      console.error('Error loading leads:', error);
       toast({
         title: "Error",
         description: "Failed to load leads",
@@ -113,11 +122,21 @@ const Admin = () => {
   };
 
   const updateLeadStatus = async (leadId: string, newStatus: string) => {
+    if (!isSignedIn) return;
+    
     try {
-      const { error } = await supabase
-        .from("leads")
-        .update({ status: newStatus })
-        .eq("id", leadId);
+      const token = await getToken();
+      
+      const { error } = await supabase.functions.invoke('manage-leads', {
+        body: { 
+          action: 'updateStatus',
+          leadId,
+          status: newStatus
+        },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (error) throw error;
 
@@ -130,6 +149,7 @@ const Admin = () => {
         description: "Lead status updated",
       });
     } catch (error: any) {
+      console.error('Error updating lead:', error);
       toast({
         title: "Error",
         description: error.message,
