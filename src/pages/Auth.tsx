@@ -29,16 +29,20 @@ const Auth = () => {
             </TabsList>
             <TabsContent value="signin" className="flex justify-center">
               <SignIn 
-                routing="hash"
-                signUpUrl="/auth#signup"
+                routing="path"
+                path="/auth"
+                signUpUrl="/auth"
                 afterSignInUrl="/admin"
+                fallbackRedirectUrl="/admin"
               />
             </TabsContent>
             <TabsContent value="signup" className="flex justify-center">
               <SignUp 
-                routing="hash"
-                signInUrl="/auth#signin"
+                routing="path"
+                path="/auth"
+                signInUrl="/auth"
                 afterSignUpUrl="/admin"
+                fallbackRedirectUrl="/admin"
               />
             </TabsContent>
           </Tabs>
